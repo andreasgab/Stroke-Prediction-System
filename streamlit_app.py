@@ -136,11 +136,10 @@ if page_selection == "Individual Patient Entry":
                     for name, impact in risk_escalators:
                         # Create a custom progress-bar style indicator for impact
                         st.info(f"**{name}**")
-                        st.markdown(f"Metric Impact: {'High' if impact > 0.1 else 'Moderate'} | Increased probability by {impact*100:.1f}%")
-                        # st.markdown(f"Priority: {'High' if impact > 0.1 else 'Moderate'}")
+                        st.markdown(f"Metric Impact: {'Critical' if impact > 0.25 else ('High' if impact > 0.1 else 'Moderate')} | Increased probability by {impact*100:.1f}%")
                 else:
                     st.write("No major risk escalators identified.")
-
+                    
             with col_prot:
                 st.markdown("#### ✅ Protective Factors")
                 if protective_factors:
@@ -150,9 +149,6 @@ if page_selection == "Individual Patient Entry":
                         # st.markdown("Contributing to lower risk score")
                 else:
                     st.write("No major protective factors identified.")
-
-
-        
 elif page_selection == "Batch Results & Analytics":
     st.title("Batch Results & Analytics")
     
