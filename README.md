@@ -30,16 +30,16 @@ This system is designed to assist healthcare professionals in identifying high-r
 
 ## Project Structure
 
-├── model/                          # Serialized .pkl pipelines (Preprocessor + AdaBoost)
+├── model/                            # Serialized .pkl pipelines (Preprocessor + AdaBoost)
 
 │   ├── adaboost_stroke_prediction_4k_trained_model_f2.pkl
 
 │   └── adaboost_stroke_prediction_5k_trained_model_f2.pkl
 
-├── data/                           # Raw dataset and production simulation CSVs
+├── data/                            # Raw dataset and production simulation CSVs
 
-├── analysis.ipynb                  # Full development: Preprocessing, model selection, GridSearch, Gini importance, SHAP analysis, MRMR
+├── analysis.ipynb                            # Full development: Preprocessing, model selection, GridSearch, Gini importance, SHAP analysis, MRMR
 
-├── requirements.txt                # Project dependencies
+├── requirements.txt                            # Project dependencies
 
-└── stroke_prediction_app.py        # Web-app interactive Streamlit dashboard. Open terminal and enter " streamlit run "stroke_prediction_app.py" "
+└── stroke_prediction_app.py                            # Web-app interactive Streamlit dashboard. Open terminal and enter " streamlit run "stroke_prediction_app.py" "
