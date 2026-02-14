@@ -10,7 +10,7 @@ import matplotlib.pyplot as plt
 # PAGE CONFIG
 st.set_page_config(page_title="Stroke Risk Predictor", layout="wide")
 
-# THEME-AWARE CSS
+# CSS
 st.markdown("""
     <style>
     [data-testid="metric-container"] {
@@ -22,33 +22,50 @@ st.markdown("""
     </style>
     """, unsafe_allow_html=True)
 
-# MODEL LOADING
+# Cache both models to avoid reloading on every interaction
 @st.cache_resource
-def load_model():
-    return joblib.load('model/adaboost_stroke_prediction_model_f2.pkl')
+def load_validated_model():
 
-try:
-    pipe = load_model()
-except Exception as e:
-    st.error(f"Error loading model: {e}")
-    st.stop()
+    return joblib.load(os.path.join('model', 'adaboost_stroke_prediction_4k_trained_model_f2.pkl'))
 
-# SIDEBAR NAVIGATION
+@st.cache_resource
+def load_full_model():
+    return joblib.load(os.path.join('model', 'adaboost_stroke_prediction_5k_trained_model_f2.pkl'))
+
+# SIDEBAR
 with st.sidebar:
     st.title("Settings & Navigation")
     
-    # Navigation Radio
+    # MODEL SELECTION
+    model_choice = st.radio(
+        "Select Model Version:",
+        ("Validated (4k Training)", "Full Knowledge (5k Total)"),
+        help="The Validated model is best for testing unseen data. The Full Knowledge model has seen the entire dataset."
+    )
+    
+    # Load chosen model into 'pipe'
+    try:
+        if model_choice == "Validated (4k Training)":
+            pipe = load_validated_model()
+        else:
+            pipe = load_full_model()
+    except Exception as e:
+        st.error(f"Error loading model: {e}")
+        st.stop()
+
+    st.divider()
+    
     page_selection = st.radio(
         "Select Mode:",
         ["Individual Patient Entry", "Batch Results & Analytics"],
-        index=0  # Default selection
+        index=0
     )
     st.divider()
     st.header("Upload Patients' Data CSV")
     uploaded_file = st.sidebar.file_uploader("And Change Mode to 'Batch Results & Analytics'", type="csv")
     st.info("CSV should include: gender, age, hypertension, heart_disease, ever_married, work_type, Residence_type, avg_glucose_level, bmi, smoking_status")
 
-# MAIN CONTENT LOGIC
+# MAIN LOGIC
 if page_selection == "Individual Patient Entry":
     st.title("Individual Patient Assessment")
     st.markdown("Enter patient information below for an immediate risk scan.")
@@ -78,25 +95,26 @@ if page_selection == "Individual Patient Entry":
         })
         
         prob = pipe.predict_proba(input_data)[0][1]
-        pred = pipe.predict(input_data)[0]
         
-        if pred == 1:
-            st.error(f"### High Risk Identified ({prob:.1%})")
+        # TRIAGE DISPLAY LOGIC
+        if prob >= 0.50:
+            st.error(f"### 🚩 High Risk Identified ({prob:.1%})")
+            st.warning("**Priority:** High. Clinical intervention and further testing is highly recommended.")
+        elif 0.40 <= prob < 0.50:
+            st.warning(f"### ⚠️ Moderate Risk ({prob:.1%})")
+            st.info("**Priority:** Patient is close to the risk threshold. Lifestyle review and active monitoring is recommended.")
         else:
-            st.success(f"### Low Risk Identified ({prob:.1%})")
+            st.success(f"### ✅ Low Risk Identified ({prob:.1%})")
 
-# CLINICAL INSIGHTS SECTION (EXPANDED)
+        # CLINICAL INSIGHTS
         st.divider()
         st.subheader("🩺 Clinical Risk Factor Analysis")
-        st.markdown("""
-        This analysis shows specifically the most impactful patient metrics that moved the model's 
-        prediction away from the baseline. This is intended for decision support only.
-        """)
+        st.markdown("Analysis of metrics influencing the model's decision relative to a neutral baseline.")
+        
         with st.spinner("Analyzing risk drivers..."):
             model = pipe.named_steps['model'] 
             preprocessor = pipe.named_steps['preprocessor']
             
-            # 1. Transform and clean names
             X_transformed = preprocessor.transform(input_data)
             if hasattr(X_transformed, "toarray"):
                 X_transformed = X_transformed.toarray()
@@ -104,39 +122,35 @@ if page_selection == "Individual Patient Entry":
             raw_names = preprocessor.get_feature_names_out()
             clean_names = [n.replace('num__','').replace('cat__','').replace('_',' ').title() for n in raw_names]
 
-            # 2. SHAP Calculation (Back-end only)
             def model_predict(data):
                 return model.predict_proba(data)[:, 1]
 
-            background = np.zeros((1, len(clean_names))) 
+            background = np.zeros((1, len(clean_names)))
             explainer = shap.Explainer(model_predict, background, feature_names=clean_names)
             shap_values = explainer(X_transformed)
             vals = shap_values.values[0]
 
-            # 3. Create Categorized Insights
             risk_escalators = []
             protective_factors = []
 
             for i in range(len(vals)):
-                if vals[i] > 0.001: # Significant increase
+                if vals[i] > 0.0001: 
                     risk_escalators.append((clean_names[i], vals[i]))
-                elif vals[i] < -0.001: # Significant decrease
+                elif vals[i] < -0.0001:
                     protective_factors.append((clean_names[i], vals[i]))
 
-            # Sort by absolute impact
             risk_escalators.sort(key=lambda x: x[1], reverse=True)
             protective_factors.sort(key=lambda x: x[1])
 
-            # 4. Display Results in a Clinical Format
             col_risk, col_prot = st.columns(2)
 
             with col_risk:
                 st.markdown("#### 🚩 Risk Escalators")
                 if risk_escalators:
                     for name, impact in risk_escalators:
-                        # Create a custom progress-bar style indicator for impact
+                        priority = 'Critical' if impact > 0.25 else ('High' if impact > 0.1 else 'Moderate')
                         st.info(f"**{name}**")
-                        st.markdown(f"Metric Impact: {'Critical' if impact > 0.25 else ('High' if impact > 0.1 else 'Moderate')} | Increased probability by {impact*100:.1f}%")
+                        st.markdown(f"Impact: **{priority}** | Increased probability by {impact*100:.1f}%")
                 else:
                     st.write("No major risk escalators identified.")
                     
@@ -144,79 +158,103 @@ if page_selection == "Individual Patient Entry":
                 st.markdown("#### ✅ Protective Factors")
                 if protective_factors:
                     for name, impact in protective_factors:
-                        st.info(f"**{name}**")
-                        st.markdown(f"Reduced probability by {abs(impact)*100:.1f}%, contributing to lower risk score")
-                        # st.markdown("Contributing to lower risk score")
+                        st.success(f"**{name}**")
+                        st.markdown(f"Reduced probability by {abs(impact)*100:.1f}%")
                 else:
                     st.write("No major protective factors identified.")
+
 elif page_selection == "Batch Results & Analytics":
     st.title("Batch Results & Analytics")
     
     if uploaded_file is not None:
         df = pd.read_csv(uploaded_file)
         
-        with st.spinner('Analyzing...'):
+        with st.spinner('Analyzing dataset...'):
             probs = pipe.predict_proba(df)[:, 1]
-            preds = pipe.predict(df)
+            preds = pipe.predict(df)  # Needed for the Confusion Matrix
             
-            # Creating the display version of the table
+            def triage_class(p):
+                if p >= 0.50: return "HIGH RISK"
+                if p >= 0.40: return "Moderate Risk"
+                return "Safe"
+
             df['Risk Probability'] = (probs * 100).round(2).astype(str) + '%'
-            df['Prediction'] = preds
-            df['Prediction'] = df['Prediction'].map({1: "HIGH RISK", 0: "Safe"})
+            df['Triage Status'] = [triage_class(p) for p in probs]
 
-        # Metrics Card Row
-        m1, m2 = st.columns(2)
+        m1, m2, m3 = st.columns(3)
         m1.metric("Patients Screened", len(df))
-        m2.metric("High Risk Detected", int(preds.sum()), delta_color="inverse")
+        m2.metric("High Risk", sum(probs >= 0.5))
+        m3.metric("Moderate Risk", sum((probs >= 0.4) & (probs < 0.5)))
 
-        # Sort the dataframe for display
         df_display = df.sort_values('Risk Probability', ascending=False)
-        
         st.dataframe(df_display, use_container_width=True)
 
-        # DOWNLOAD BUTTON SECTION
+        # DOWNLOAD BUTTON
         csv_data = df_display.to_csv(index=False).encode('utf-8')
-        
-        file_name = os.path.splitext(uploaded_file.name)[0]
-        
         st.download_button(
-            label="Download Patients' Report With Predictions",
+            label="Download Risk Report",
             data=csv_data,
-            file_name=f"{file_name}_risk_predictions.csv",
-            mime="text/csv",
-            help="Click to download the table above with risk scores and predictions."
+            file_name=f"{os.path.splitext(uploaded_file.name)[0]}_results.csv",
+            mime="text/csv"
         )
         
         st.divider()
         
-# ENHANCED PLOTLY CHART
-        df['Risk Color'] = df['Risk Probability'].str.rstrip('%').astype(float) / 100
-        df['Status'] = df['Risk Color'].apply(lambda x: 'High Risk' if x >= 0.5 else 'Safe')
+        # ENHANCED TRIAGE HISTOGRAM
+        df['Risk_Float'] = probs
+        df['Group'] = df['Risk_Float'].apply(
+            lambda x: 'High Risk' if x >= 0.5 else ('Moderate Risk' if x >= 0.4 else 'Safe')
+        )
 
-        fig = px.histogram(
+        fig_hist = px.histogram(
             df, 
-            x='Risk Color', 
-            color='Status',
-            title="Distribution of Patient Risk Scores",
-            labels={'Risk Color': 'Probability of Stroke', 'count': 'Number of Patients'},
-            color_discrete_map={'High Risk': '#ef553b', 'Safe': '#636efa'},
+            x='Risk_Float', 
+            color='Group',
+            title=f"Patient Risk Distribution (Triage Groups) - {model_choice}",
+            labels={'Risk_Float': 'Stroke Probability', 'count': 'Patient Count'},
+            color_discrete_map={
+                'High Risk': '#ef553b',   # Red
+                'Moderate Risk': '#fec032',  # Yellow/Gold
+                'Safe': '#636efa'         # Blue
+            },
             text_auto=True,
             nbins=20
         )
 
-        # FORCE WHITE LABELS FOR HIGH RISK
-        fig.update_traces(
-            textfont_color="white", 
-            textposition="inside" # Ensures labels stay inside the bars where they are readable
-        )
+        fig_hist.update_traces(textfont_color="white", textposition="inside")
+        fig_hist.update_layout(bargap=0.1, xaxis_tickformat='.0%', legend_title_text='Triage Group')
 
-        fig.update_layout(
-            bargap=0.1,
-            xaxis_tickformat='.0%',
-            showlegend=True,
-            legend_title_text='Clinical Status'
-        )
+        st.plotly_chart(fig_hist, use_container_width=True)
 
-        st.plotly_chart(fig, use_container_width=True)
+        # --- NEW: CONFUSION MATRIX SECTION ---
+        st.divider()
+        if 'stroke' in df.columns:
+            st.subheader("🏁 Model Performance Accuracy")
+            st.markdown("Comparing model predictions against ground truth labels from the uploaded file.")
+            
+            from sklearn.metrics import confusion_matrix, ConfusionMatrixDisplay
+            
+            y_total = df['stroke']
+            cm = confusion_matrix(y_total, preds)
+            
+            # We must use fig, ax for Streamlit compatibility
+            fig_cm, ax = plt.subplots(figsize=(8, 6))
+            disp = ConfusionMatrixDisplay(confusion_matrix=cm, display_labels=['No Stroke', 'Stroke'])
+            disp.plot(cmap='Reds', ax=ax, values_format='d')
+            
+            plt.title(f"Confusion Matrix: {model_choice}")
+            plt.grid(False)
+            
+            # Display in Streamlit
+            st.pyplot(fig_cm)
+            
+            # Quick metric summary below the plot
+            tp = cm[1,1]
+            fn = cm[1,0]
+            recall = tp / (tp + fn) if (tp + fn) > 0 else 0
+            st.write(f"**Current Recall Rate:** {recall:.1%}")
+        else:
+            st.info("💡 **Note:** Upload a CSV containing a 'stroke' column to view the Confusion Matrix and accuracy metrics.")
+
     else:
         st.warning("Please upload a CSV file via the sidebar to view Batch Analytics.")
