@@ -1,4 +1,4 @@
-# Folders
+# Folders (Trailing slash ensures Git ignores the whole directory)
 analysis - uneccessary/
 model/
 
