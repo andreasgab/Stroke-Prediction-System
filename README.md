@@ -32,9 +32,9 @@ Evaluated against the full 5,000-row dataset:
 
 ├── model/                          # Serialized .pkl pipelines (Preprocessor + AdaBoost)
 
-│   ├── adaboost_stroke_prediction_4k_trained_model_f2.pkl
+    ├── adaboost_stroke_prediction_4k_trained_model_f2.pkl
 
-│   └── adaboost_stroke_prediction_5k_trained_model_f2.pkl
+    └── adaboost_stroke_prediction_5k_trained_model_f2.pkl
 
 ├── data/                           # Raw dataset and production simulation CSVs
 
