@@ -14,12 +14,12 @@ This system is designed to assist healthcare professionals in identifying high-r
 * **mRMR Integration:** Utilized Minimum Redundancy Maximum Relevance feature selection to ensure clinical markers (Hypertension/Heart Disease) contribute to the model despite the mathematical dominance of Age.
 
 ## Performance Summary
-Evaluated against a 1,000-row "Production Simulation" dataset (unseen by the Validated model):
+* Evaluated against a 1,000-row "Production Simulation" dataset (unseen by the Validated model):
     Recall: 87% (Successfully flagged 53 out of 61 actual stroke cases).
     Precision: 15% (A deliberate trade-off to ensure a high-sensitivity screening tool).
     Primary Predictors: Age (Dominant), BMI, Glucose Level, and Marital Status.
 
-Evaluated against the full 5,000-row dataset:
+* Evaluated against the full 5,000-row dataset:
     Recall: 88% (218/249 stroke cases).
     Precision: 12%.
     The lower precision is a direct result of the ADASYN-oversampling and F2-optimization, ensuring that the model errs on the side of caution.
@@ -32,9 +32,9 @@ Evaluated against the full 5,000-row dataset:
 
 ├── model/                          # Serialized .pkl pipelines (Preprocessor + AdaBoost)
 
-    ├── adaboost_stroke_prediction_4k_trained_model_f2.pkl
+|  ├── adaboost_stroke_prediction_4k_trained_model_f2.pkl
 
-    └── adaboost_stroke_prediction_5k_trained_model_f2.pkl
+|  └── adaboost_stroke_prediction_5k_trained_model_f2.pkl
 
 ├── data/                           # Raw dataset and production simulation CSVs
 
