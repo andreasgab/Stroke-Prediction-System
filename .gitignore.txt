@@ -1,0 +1,13 @@
+# Folders
+analysis - uneccessary/
+model/
+
+# Streamlit/Python extras
+streamlit_app2.py
+streamlit_app3.py
+__pycache__/
+.streamlit/
+*.pyc
+
+# OS specific
+.DS_Store
