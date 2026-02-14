@@ -32,9 +32,9 @@ This system is designed to assist healthcare professionals in identifying high-r
 
 ├── model/                          # Serialized .pkl pipelines (Preprocessor + AdaBoost)
 
-|  ├── adaboost_stroke_prediction_4k_trained_model_f2.pkl
+│   ├── adaboost_stroke_prediction_4k_trained_model_f2.pkl
 
-|  └── adaboost_stroke_prediction_5k_trained_model_f2.pkl
+│   └── adaboost_stroke_prediction_5k_trained_model_f2.pkl
 
 ├── data/                           # Raw dataset and production simulation CSVs
 
