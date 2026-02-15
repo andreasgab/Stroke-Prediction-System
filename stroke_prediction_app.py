@@ -62,7 +62,7 @@ with st.sidebar:
     st.divider()
     st.header("Upload Patients' Data CSV")
     uploaded_file = st.sidebar.file_uploader("And Change Mode to 'Batch Results & Analytics'", type="csv")
-    st.info("CSV should include information: gender, age, hypertension, heart_disease, ever_married, work_type, Residence_type, avg_glucose_level, bmi, smoking_status")
+    st.info("CSV should include: gender, age, hypertension, heart_disease, ever_married, work_type, Residence_type, avg_glucose_level, bmi, smoking_status")
 
 # MAIN LOGIC
 if page_selection == "Individual Patient Entry":
