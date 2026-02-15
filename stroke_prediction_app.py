@@ -40,9 +40,8 @@ with st.sidebar:
     model_choice = st.radio(
         "Select Model Version:",
         ("Core Model", "Comprehensive Model"),
-        help="The Core Model model is best for testing unseen data. The 'Comprehensive Model' model has seen the entire dataset."
+        help='The "Core Model" is best for testing on the 1k-rows unseen dataset. The "Comprehensive Model" has been trained on the entire dataset.'
     )
-    
     # Load chosen model into 'pipe'
     try:
         if model_choice == "Core Model":
