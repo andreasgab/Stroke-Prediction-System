@@ -262,13 +262,11 @@ elif page_selection == "Batch Results & Analytics":
             st.markdown(f"{color_dot('#ef553b')} **High Risk:** {high_risk_pct:.1f}%", unsafe_allow_html=True)
             st.markdown(f"{color_dot('#fec032')} **Moderate Risk:** {mod_risk_pct:.1f}%", unsafe_allow_html=True)
             st.markdown(f"{color_dot('#636efa')} **Safe:** {safe_pct:.1f}%", unsafe_allow_html=True)
-            
+            st.divider()
             # Screening Load Logic
             screening_load = high_risk_pct + mod_risk_pct
             st.metric(label="Patient Screening Load", value=f"{screening_load:.1f}%", 
                       help="Percentage of patients requiring clinical attention (High + Moderate Risk)")
-            st.divider()
-            st.subheader("Safety")
             if 'stroke' in df.columns:
                 tp = cm[1,1]
                 fn = cm[1,0]
