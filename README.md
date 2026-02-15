@@ -16,7 +16,7 @@ This system is designed to assist healthcare professionals in identifying high-r
 ## Performance Summary
 * Evaluated against a 1,000-row "Production Simulation" dataset (unseen by the Validated model):
     Recall: 87% (Successfully flagged 53 out of 61 actual stroke cases).
-    Precision: 15% (A deliberate trade-off to ensure a high-sensitivity screening tool).
+    Precision: 14% (A deliberate trade-off to ensure a high-sensitivity screening tool).
     Primary Predictors: Age (Dominant), BMI, Glucose Level, and Marital Status.
 
 * Evaluated against the full 5,000-row dataset:
@@ -32,9 +32,9 @@ This system is designed to assist healthcare professionals in identifying high-r
 
 ├── model/                          # Serialized .pkl pipelines (Preprocessor + AdaBoost)
 
-│   ├── adaboost_stroke_prediction_4k_trained_model_f2.pkl
+│   ├── core_stroke_prediction_model.pkl
 
-│   └── adaboost_stroke_prediction_5k_trained_model_f2.pkl
+│   └── comprehensive_stroke_prediction_model.pkl
 
 ├── data/                           # Raw dataset and production simulation CSVs
 
